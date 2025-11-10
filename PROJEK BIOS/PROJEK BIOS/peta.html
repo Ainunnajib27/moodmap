@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Emosi</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script>
+        // !!! GANTI DENGAN URL APLIKASI WEB ANDA YANG SAMA !!!
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqjyXZ8SfGeqJBkzrk9nvForIkLYjnPNX-U4sTcQyqsQ23elkLsQSKhQIPrjmgE9sr/exec'; 
+
+        // 1. Inisialisasi Peta
+        // Peta akan berpusat di Indonesia
+        const map = L.map('map').setView([-2.5489, 118.0149], 5);
+
+        // 2. Tambahkan Latar Belakang Peta (Tile Layer) dari OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // 3. Fungsi untuk mengambil data dari Google Sheet dan menambahkannya ke peta
+        async function loadMoodData() {
+            try {
+                const response = await fetch(SCRIPT_URL); // Melakukan GET request ke URL
+                const data = await response.json(); // Data dari Google Sheet (array of objects)
+                
+                // Loop untuk setiap data emosi
+                data.forEach(entry => {
+                    const lat = entry.Latitude;
+                    const lon = entry.Longitude;
+                    const mood = entry.Mood;
+                    
+                    let markerColor = 'grey'; // Default
+                    
+                    if (mood === 'Senang') {
+                        markerColor = 'green';
+                    } else if (mood === 'Sedih') {
+                        markerColor = 'blue';
+                    } else if (mood === 'Marah') {
+                        markerColor = 'red';
+                    }
+
+                    // Buat penanda lingkaran berwarna
+                    L.circleMarker([lat, lon], {
+                        radius: 8,
+                        color: markerColor,
+                        fillColor: markerColor,
+                        fillOpacity: 0.7
+                    })
+                    .bindPopup(`Perasaan: ${mood}<br>Pada: ${new Date(entry.Timestamp).toLocaleString('id-ID')}`)
+                    .addTo(map);
+                });
+
+            } catch (error) {
+                console.error("Gagal mengambil data peta:", error);
+            }
+        }
+
+        // Panggil fungsi saat halaman selesai dimuat
+        document.addEventListener('DOMContentLoaded', loadMoodData);
+    </script>
+</body>
+</html>
