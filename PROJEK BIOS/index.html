@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bagaimana Perasaanmu Hari Ini?</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f4; text-align: center; }
+        .mood-container { display: flex; gap: 50px; margin-bottom: 20px; }
+        .mood-btn { font-size: 150px; padding: 50px; border: none; border-radius: 25px; cursor: pointer; transition: transform 0.2s; }
+        .mood-btn:hover { transform: scale(1.1); }
+        #senang { background-color: #a8e6cf; }
+        #sedih { background-color: #a7c5eb; }
+        #marah { background-color: #ffaaa5; }
+        #status { font-size: 1.1em; color: #333; }
+    </style>
+</head>
+<body>
+
+    <h2>Bagaimana Perasaanmu Hari Ini?</h2> 
+    
+    <div class="mood-container">
+        <button class="mood-btn" id="senang" data-mood="Senang">😊</button>
+        <button class="mood-btn" id="sedih" data-mood="Sedih">😢</button>
+        <button class="mood-btn" id="marah" data-mood="Marah">😠</button>
+    </div>
+
+    <p id="status">Pilih salah satu emoji untuk membagikan lokasimu.</p>
+    
+    <a href="peta.html">Lihat Peta Emosi</a>
+
+    <script>
+        // !!! GANTI DENGAN URL APLIKASI WEB ANDA DARI GOOGLE APPS SCRIPT !!!
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqjyXZ8SfGeqJBkzrk9nvForIkLYjnPNX-U4sTcQyqsQ23elkLsQSKhQIPrjmgE9sr/exec'; 
+        
+        const statusEl = document.getElementById('status');
+        
+        document.querySelectorAll('.mood-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const mood = button.dataset.mood;
+                handleMoodClick(mood);
+            });
+        });
+
+        function handleMoodClick(mood) {
+            statusEl.innerText = "Mendapatkan lokasimu...";
+            
+            if (!("geolocation" in navigator)) {
+                statusEl.innerText = "Maaf, browser Anda tidak mendukung Geolocation.";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    statusEl.innerText = `Lokasi didapat (${lat.toFixed(2)}, ${lon.toFixed(2)}). Mengirim data...`;
+                    sendData(mood, lat, lon);
+                },
+                (error) => {
+                    statusEl.innerText = "Gagal mendapatkan lokasi. Mohon izinkan akses lokasi.";
+                    console.error("Error Geolocation:", error);
+                }
+            );
+        }
+
+        async function sendData(mood, lat, lon) {
+            const data = { mood, lat, lon };
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8', // Apps Script bisa sedikit rewel, text/plain seringkali lebih aman
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    statusEl.innerText = 'Data berhasil disimpan. Terima kasih!';
+                } else {
+                    statusEl.innerText = 'Gagal menyimpan data ke server.';
+                }
+                
+            } catch (error) {
+                console.error('Error sending data:', error);
+                statusEl.innerText = 'Terjadi error saat mengirim data. Cek console.';
+            }
+        }
+    </script>
+</body>
+</html>
