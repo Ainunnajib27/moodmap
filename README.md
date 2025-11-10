@@ -1,2 +1,0 @@
-# moodmap
-website moodmap
